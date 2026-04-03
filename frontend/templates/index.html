@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACE-Vend — Simulation</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>🤖 ACE-Vend <span class="subtitle">Agentic Context Engineering × Vending Machine</span></h1>
+    <div id="status-badge" class="badge online">online</div>
+  </header>
+
+  <main>
+    <!-- ── Left column: machine state ── -->
+    <section class="panel" id="machine-panel">
+      <h2>Vending Machine</h2>
+
+      <div class="stat-row">
+        <span>Cash</span>
+        <strong id="cash">$0.00</strong>
+      </div>
+      <div class="stat-row">
+        <span>Step</span>
+        <strong id="step-counter">0</strong>
+      </div>
+      <div class="stat-row">
+        <span>Hallucinations</span>
+        <strong id="hallucination-count" class="warn">0</strong>
+      </div>
+      <div class="stat-row">
+        <span>Playbook bullets</span>
+        <strong id="bullet-count">0</strong>
+      </div>
+
+      <h3>Inventory</h3>
+      <div id="inventory"></div>
+
+      <h3>Controls</h3>
+      <div class="controls">
+        <button id="btn-step">▶ Step</button>
+        <button id="btn-auto" class="secondary">⏵ Auto-run</button>
+        <button id="btn-reset" class="danger">↺ Reset</button>
+      </div>
+      <label>Speed: <input type="range" id="speed-slider" min="500" max="5000" step="500" value="2000" /></label>
+      <span id="speed-label">2.0 s</span>
+
+      <h3>Customer Request</h3>
+      <div class="input-row">
+        <input type="text" id="customer-input" placeholder='e.g. "I want Coke"' />
+        <button id="btn-send">Send</button>
+      </div>
+    </section>
+
+    <!-- ── Middle column: agent activity ── -->
+    <section class="panel" id="activity-panel">
+      <h2>Agent Activity</h2>
+      <div id="activity-feed"></div>
+    </section>
+
+    <!-- ── Right column: playbook ── -->
+    <section class="panel" id="playbook-panel">
+      <h2>📖 ACE Playbook <button id="btn-refresh-playbook" class="icon-btn">⟳</button></h2>
+      <div id="playbook-list"></div>
+    </section>
+  </main>
+
+  <!-- ── Reports modal overlay ── -->
+  <div id="reports-feed"></div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
