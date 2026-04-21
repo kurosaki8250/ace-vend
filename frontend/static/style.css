@@ -229,3 +229,80 @@ input[type="range"] { flex: 1; }
   animation: slideIn 0.3s ease;
 }
 @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+/* Header stats */
+.header-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+
+.stat-pill {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.stat-pill strong {
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+/* Quick actions */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.quick-btn {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.quick-btn:hover {
+  background: var(--border);
+  border-color: var(--accent);
+}
+
+/* Metrics chart container */
+#metrics-chart {
+  width: 100%;
+  height: 200px;
+  margin-top: 10px;
+}
+
+/* Clear activity button */
+#btn-clear-activity {
+  float: right;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+/* Responsive improvements */
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  
+  .panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 400px;
+  }
+  
+  .header-stats {
+    display: none;
+  }
+}
