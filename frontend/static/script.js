@@ -1,10 +1,11 @@
-// frontend/static/script.js — ACE-Vend UI
+// frontend/static/script.js — ACE-Vend UI with enhanced features
 
 const MAX_FEED_CARDS = 50;
 const MAX_INVENTORY = 10; // assumed max for bar scaling
 
 let autoRunTimer = null;
 let totalHallucinations = 0;
+let metricsChart = null;
 
 // ── SSE ─────────────────────────────────────────────────────────────────────
 
@@ -19,13 +20,22 @@ es.onerror = () => console.warn("SSE connection dropped; will reconnect.");
 // ── Initial state load ───────────────────────────────────────────────────────
 
 async function loadState() {
-  const res = await fetch("/api/state");
-  const data = await res.json();
-  renderEnvState(data.env);
-  renderPlaybook(data.playbook);
-  document.getElementById("bullet-count").textContent = data.playbook_count;
-  totalHallucinations = data.total_hallucinations;
-  document.getElementById("hallucination-count").textContent = totalHallucinations;
+  try {
+    const res = await fetch("/api/state");
+    const data = await res.json();
+    renderEnvState(data.env);
+    renderPlaybook(data.playbook);
+    document.getElementById("bullet-count").textContent = data.playbook_count;
+    totalHallucinations = data.total_hallucinations;
+    document.getElementById("hallucination-count").textContent = totalHallucinations;
+    document.getElementById("header-steps").textContent = data.env.step;
+    document.getElementById("header-hallucinations").textContent = totalHallucinations;
+    
+    // Load and render metrics chart
+    await loadMetrics();
+  } catch (err) {
+    console.error("Failed to load state:", err);
+  }
 }
 loadState();
 
@@ -34,20 +44,29 @@ loadState();
 function handleStepEvent(event) {
   renderEnvState(event.state);
   document.getElementById("step-counter").textContent = event.step;
+  document.getElementById("header-steps").textContent = event.step;
   document.getElementById("bullet-count").textContent = event.playbook_count;
+  
   if (event.hallucination) {
     totalHallucinations++;
     document.getElementById("hallucination-count").textContent = totalHallucinations;
+    document.getElementById("header-hallucinations").textContent = totalHallucinations;
   }
+  
   appendActivityCard(event);
   if (event.curator) refreshPlaybook();
   if (event.owner_report) showReportToast(event.owner_report);
+  
+  // Update chart periodically
+  if (event.step % 5 === 0) loadMetrics();
 }
 
 function handleReset() {
   totalHallucinations = 0;
   document.getElementById("hallucination-count").textContent = 0;
+  document.getElementById("header-hallucinations").textContent = 0;
   document.getElementById("step-counter").textContent = 0;
+  document.getElementById("header-steps").textContent = 0;
   document.getElementById("cash").textContent = "$0.00";
   document.getElementById("activity-feed").innerHTML = "";
   loadState();
@@ -122,9 +141,94 @@ function renderPlaybook(bullets) {
 }
 
 async function refreshPlaybook() {
-  const res = await fetch("/api/playbook");
-  const bullets = await res.json();
-  renderPlaybook(bullets);
+  try {
+    const res = await fetch("/api/playbook");
+    const bullets = await res.json();
+    renderPlaybook(bullets);
+  } catch (err) {
+    console.error("Failed to refresh playbook:", err);
+  }
+}
+
+async function loadMetrics() {
+  try {
+    const res = await fetch("/api/metrics");
+    const data = await res.json();
+    renderMetricsChart(data);
+  } catch (err) {
+    console.error("Failed to load metrics:", err);
+  }
+}
+
+function renderMetricsChart(data) {
+  const ctx = document.getElementById("metrics-chart");
+  if (!ctx) return;
+  
+  const labels = data.map(d => `Step ${d.step}`);
+  const cashData = data.map(d => d.cash);
+  const hallData = data.map(d => d.hallucination);
+  
+  if (metricsChart) {
+    metricsChart.destroy();
+  }
+  
+  metricsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels.slice(-20), // Show last 20 steps
+      datasets: [
+        {
+          label: 'Cash ($)',
+          data: cashData.slice(-20),
+          borderColor: '#58a6ff',
+          backgroundColor: 'rgba(88, 166, 255, 0.1)',
+          tension: 0.3,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Hallucinations',
+          data: hallData.slice(-20),
+          borderColor: '#f85149',
+          backgroundColor: 'rgba(248, 81, 73, 0.1)',
+          tension: 0.3,
+          yAxisID: 'y1',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#c9d1d9', font: { size: 10 } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#8b949e', maxTicksLimit: 5 },
+          grid: { color: '#30363d' }
+        },
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          ticks: { color: '#58a6ff' },
+          grid: { color: '#30363d' }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          ticks: { color: '#f85149' },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
 }
 
 function showReportToast(msg) {
@@ -148,6 +252,19 @@ document.getElementById("btn-step").addEventListener("click", runStep);
 document.getElementById("btn-send").addEventListener("click", sendCustomer);
 document.getElementById("btn-reset").addEventListener("click", doReset);
 document.getElementById("btn-refresh-playbook").addEventListener("click", refreshPlaybook);
+document.getElementById("btn-clear-activity").addEventListener("click", () => {
+  document.getElementById("activity-feed").innerHTML = "";
+});
+
+// Quick action buttons
+document.querySelectorAll(".quick-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const request = btn.getAttribute("data-request");
+    document.getElementById("customer-input").value = request;
+    sendCustomer();
+  });
+});
+
 document.getElementById("customer-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendCustomer();
 });
@@ -179,11 +296,15 @@ document.getElementById("speed-slider").addEventListener("input", (e) => {
 async function runStep() {
   const customer = document.getElementById("customer-input").value.trim();
   document.getElementById("customer-input").value = "";
-  await fetch("/api/step", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customer }),
-  });
+  try {
+    await fetch("/api/step", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer }),
+    });
+  } catch (err) {
+    console.error("Step failed:", err);
+  }
 }
 
 async function sendCustomer() {
@@ -197,5 +318,9 @@ async function doReset() {
     document.getElementById("btn-auto").textContent = "⏵ Auto-run";
     document.getElementById("btn-auto").classList.remove("active");
   }
-  await fetch("/api/reset", { method: "POST" });
+  try {
+    await fetch("/api/reset", { method: "POST" });
+  } catch (err) {
+    console.error("Reset failed:", err);
+  }
 }

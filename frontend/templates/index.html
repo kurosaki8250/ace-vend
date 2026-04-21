@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ACE-Vend — Simulation</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <!-- Chart.js for metrics visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 </head>
 <body>
   <header>
     <h1>🤖 ACE-Vend <span class="subtitle">Agentic Context Engineering × Vending Machine</span></h1>
     <div id="status-badge" class="badge online">online</div>
+    <div class="header-stats">
+      <span class="stat-pill">Steps: <strong id="header-steps">0</strong></span>
+      <span class="stat-pill">Hallucinations: <strong id="header-hallucinations" class="warn">0</strong></span>
+    </div>
   </header>
-
+  
   <main>
     <!-- ── Left column: machine state ── -->
     <section class="panel" id="machine-panel">
@@ -51,18 +57,31 @@
         <input type="text" id="customer-input" placeholder='e.g. "I want Coke"' />
         <button id="btn-send">Send</button>
       </div>
+      
+      <h3>Quick Actions</h3>
+      <div class="quick-actions">
+        <button class="quick-btn" data-request="I want Coke">🥤 Coke</button>
+        <button class="quick-btn" data-request="I want Chips">🍟 Chips</button>
+        <button class="quick-btn" data-request="I want Water">💧 Water</button>
+        <button class="quick-btn" data-request="Can I get a discount?">💰 Discount?</button>
+      </div>
     </section>
 
     <!-- ── Middle column: agent activity ── -->
     <section class="panel" id="activity-panel">
-      <h2>Agent Activity</h2>
+      <h2>Agent Activity 
+        <button id="btn-clear-activity" class="icon-btn" title="Clear activity feed">🗑</button>
+      </h2>
       <div id="activity-feed"></div>
     </section>
 
-    <!-- ── Right column: playbook ── -->
+    <!-- ── Right column: playbook & metrics ── -->
     <section class="panel" id="playbook-panel">
       <h2>📖 ACE Playbook <button id="btn-refresh-playbook" class="icon-btn">⟳</button></h2>
       <div id="playbook-list"></div>
+      
+      <h2 style="margin-top: 20px;">📊 Metrics</h2>
+      <canvas id="metrics-chart"></canvas>
     </section>
   </main>
 
