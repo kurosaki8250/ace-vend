@@ -31,8 +31,10 @@ def get_agent():
     if _agent is None:
         with _agent_lock:
             if _agent is None:
-                from backend.utils import load_model
-                load_model()
+                from backend.utils import load_model, _use_mock
+                # Only load real model if not in mock mode
+                if not _use_mock:
+                    load_model()
                 from backend.agent import VendingAgent
                 _agent = VendingAgent()
     return _agent

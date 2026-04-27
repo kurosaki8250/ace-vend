@@ -22,7 +22,7 @@ MAX_PLAYBOOK_BULLETS = 40          # hard cap on stored bullets
 USE_OFFICIAL_ACE = True
 FALLBACK_TO_LIGHTWEIGHT = True    # always fall back if official ACE fails
 
-MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"   # HuggingFace model id
+MODEL_NAME = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"   # HuggingFace model id
 MAX_NEW_TOKENS = 256               # generation budget per call
 TEMPERATURE = 0.3                  # low temp → more deterministic JSON
 DO_SAMPLE = True
