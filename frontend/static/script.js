@@ -294,14 +294,16 @@ document.getElementById("speed-slider").addEventListener("input", (e) => {
 });
 
 async function runStep() {
-  const customer = document.getElementById("customer-input").value.trim();
-  document.getElementById("customer-input").value = "";
+  const inputEl = document.getElementById("customer-input");
+  const customer = inputEl.value.trim();
   try {
     await fetch("/api/step", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customer }),
     });
+    // Clear input only after successful request
+    inputEl.value = "";
   } catch (err) {
     console.error("Step failed:", err);
   }

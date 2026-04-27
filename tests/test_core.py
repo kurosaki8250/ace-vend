@@ -82,8 +82,15 @@ class TestVendingEnvironment:
 
 class TestPlaybookManager:
     def setup_method(self):
-        # Fresh playbook file each test
-        cfg.PLAYBOOK_PATH = os.path.join(_TMP, f"pb_{id(self)}.txt")
+        # Fresh playbook file each test - use unique path per test method
+        import inspect
+        from pathlib import Path
+        test_name = inspect.currentframe().f_back.f_code.co_name
+        cfg.PLAYBOOK_PATH = os.path.join(_TMP, f"pb_{id(self)}_{test_name}.txt")
+        # Remove any existing file from previous runs
+        pb_path = Path(cfg.PLAYBOOK_PATH)
+        if pb_path.exists():
+            pb_path.unlink()
         from backend.playbook_manager import PlaybookManager
         self.pm = PlaybookManager()
 

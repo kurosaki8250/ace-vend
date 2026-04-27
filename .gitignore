@@ -1,4 +1,3 @@
-```
 # Python
 __pycache__/
 *.py[cod]
@@ -21,60 +20,32 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
-venv/
-env/
-ENV/
+# Testing
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+
+# Environment
+.env
+.env.local
+.env.*
 .venv/
-.env/
+venv/
+ENV/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
-
-# Environment variables
-.env
-.env.local
-*.env.*
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# Pytest
-.pytest_cache/
-
-# MyPy
-.mypy_cache/
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# System
-.DS_Store
-Thumbs.db
-```
