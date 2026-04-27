@@ -86,13 +86,19 @@ class TestPlaybookManager:
         import inspect
         from pathlib import Path
         test_name = inspect.currentframe().f_back.f_code.co_name
-        cfg.PLAYBOOK_PATH = os.path.join(_TMP, f"pb_{id(self)}_{test_name}.txt")
+        playbook_path = os.path.join(_TMP, f"pb_{id(self)}_{test_name}.txt")
         # Remove any existing file from previous runs
-        pb_path = Path(cfg.PLAYBOOK_PATH)
+        pb_path = Path(playbook_path)
         if pb_path.exists():
             pb_path.unlink()
+        # Set the config path BEFORE importing/creating PlaybookManager
+        cfg.PLAYBOOK_PATH = playbook_path
         from backend.playbook_manager import PlaybookManager
-        self.pm = PlaybookManager()
+        # Force reload of the module to pick up the new config
+        import importlib
+        import backend.playbook_manager as pm_module
+        importlib.reload(pm_module)
+        self.pm = pm_module.PlaybookManager()
 
     def test_empty_on_start(self):
         assert self.pm.count() == 0
