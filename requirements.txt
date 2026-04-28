@@ -1,19 +1,5 @@
-# ACE Vending Machine — Python dependencies
-# Pin versions for reproducibility
-
-# Web framework
-flask>=3.0.0
-flask-cors>=4.0.0
-
-# Language model inference
-transformers>=4.40.0
-torch>=2.2.0          # CPU version; for GPU: torch>=2.2.0+cu121
-accelerate>=0.27.0
-sentencepiece>=0.1.99  # needed by Qwen tokenizer
-protobuf>=3.20.0
-
-# Optional: faster inference
-# llama-cpp-python>=0.2.50   # uncomment if using GGUF models
-
-# Utilities
-requests>=2.31.0
+openai==1.12.0
+python-dotenv==1.0.1
+requests==2.31.0
+rich==13.7.0
+pytest==8.0.0
