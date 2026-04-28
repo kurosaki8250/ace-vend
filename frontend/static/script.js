@@ -23,6 +23,14 @@ async function loadState() {
   try {
     const res = await fetch("/api/state");
     const data = await res.json();
+    
+    // Check for error response
+    if (data.error) {
+      console.error("Error loading state:", data.error);
+      showErrorBanner("Failed to load state: " + data.error);
+      return;
+    }
+    
     renderEnvState(data.env);
     renderPlaybook(data.playbook);
     document.getElementById("bullet-count").textContent = data.playbook_count;
@@ -35,6 +43,7 @@ async function loadState() {
     await loadMetrics();
   } catch (err) {
     console.error("Failed to load state:", err);
+    showErrorBanner("Failed to connect to server. Is the backend running?");
   }
 }
 loadState();
@@ -244,6 +253,24 @@ function escHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function showErrorBanner(message) {
+  // Create or update error banner at top of page
+  let banner = document.getElementById("error-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "error-banner";
+    banner.style.cssText = "position:fixed;top:0;left:0;right:0;background:#f85149;color:white;padding:12px;text-align:center;z-index:9999;font-family:sans-serif;";
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+  banner.textContent = message;
+  banner.style.display = "block";
+  
+  // Auto-hide after 10 seconds
+  setTimeout(() => {
+    banner.style.display = "none";
+  }, 10000);
 }
 
 // ── Button controls ──────────────────────────────────────────────────────────

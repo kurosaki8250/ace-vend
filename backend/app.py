@@ -6,7 +6,6 @@ import logging
 import queue
 import threading
 from typing import Any, Generator
-from functools import lru_cache
 from flask import Flask, Response, jsonify, request, render_template
 
 log = logging.getLogger(__name__)
@@ -31,10 +30,11 @@ def get_agent():
     if _agent is None:
         with _agent_lock:
             if _agent is None:
-                from backend.utils import load_model, _use_mock
+                from backend.utils import load_model, check_model_loaded, _use_mock
                 # Only load real model if not in mock mode
                 if not _use_mock:
                     load_model()
+                    check_model_loaded()  # Verify model loaded successfully
                 from backend.agent import VendingAgent
                 _agent = VendingAgent()
     return _agent
@@ -81,7 +81,6 @@ def index() -> Response:
 
 
 @app.route("/api/state")
-@lru_cache(maxsize=1)
 def api_state() -> Response:
     """Get current environment and playbook state."""
     try:

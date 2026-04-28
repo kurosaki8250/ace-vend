@@ -72,7 +72,11 @@ class PlaybookManager:
     # ── Public API ───────────────────────────────────────────────────────────
 
     def render(self, token_budget: int = 4000) -> str:
-        """Return the playbook as a prompt-ready string within budget."""
+        """
+        Return the playbook as a prompt-ready string within budget.
+        
+        MODERATE 7 fix: Replaced recursion with iteration to avoid stack overflow.
+        """
         lines = []
         for section in SECTIONS:
             section_bullets = [b for b in self.bullets if b.section == section]
@@ -81,13 +85,27 @@ class PlaybookManager:
                 for b in sorted(section_bullets, key=lambda x: -x.score):
                     lines.append(str(b))
                 lines.append("")
+        
         text = "\n".join(lines)
+        
         # Rough token estimate: 1 token ≈ 4 chars
+        # Use iteration instead of recursion to avoid stack overflow
         while len(text) // 4 > token_budget and self.bullets:
             # Drop lowest-score bullet
             worst = min(self.bullets, key=lambda b: b.score)
             self.bullets.remove(worst)
-            text = self.render(token_budget)
+            
+            # Recalculate text iteratively
+            lines = []
+            for section in SECTIONS:
+                section_bullets = [b for b in self.bullets if b.section == section]
+                if section_bullets:
+                    lines.append(f"## {section}")
+                    for b in sorted(section_bullets, key=lambda x: -x.score):
+                        lines.append(str(b))
+                    lines.append("")
+            text = "\n".join(lines)
+        
         return text
 
     def add_or_update(self, text: str, label: str, section: str = SECTIONS[0]) -> Bullet:
