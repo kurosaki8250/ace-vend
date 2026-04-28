@@ -1,7 +1,9 @@
 # ACE Vending Machine — Python dependencies
+# Pin versions for reproducibility
 
 # Web framework
 flask>=3.0.0
+flask-cors>=4.0.0
 
 # Language model inference
 transformers>=4.40.0

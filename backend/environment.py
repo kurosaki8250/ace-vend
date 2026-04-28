@@ -55,19 +55,21 @@ class VendingEnvironment:
 
     def _save_state(self):
         import json
+        from datetime import datetime, timezone
         con = sqlite3.connect(DATABASE_PATH)
         con.execute(
             "INSERT INTO state_snapshots (step, timestamp, inventory, cash, status) VALUES (?,?,?,?,?)",
-            (self.step, datetime.utcnow().isoformat(), json.dumps(self.inventory), self.cash, self.status)
+            (self.step, datetime.now(timezone.utc).isoformat(), json.dumps(self.inventory), self.cash, self.status)
         )
         con.commit()
         con.close()
 
     def _log_step(self, action_type: str, action_json: str, outcome: str, hallucination: bool = False):
+        from datetime import datetime, timezone
         con = sqlite3.connect(DATABASE_PATH)
         con.execute(
             "INSERT INTO steps (step, timestamp, action_type, action_json, outcome, cash, hallucination) VALUES (?,?,?,?,?,?,?)",
-            (self.step, datetime.utcnow().isoformat(), action_type, action_json, outcome, self.cash, int(hallucination))
+            (self.step, datetime.now(timezone.utc).isoformat(), action_type, action_json, outcome, self.cash, int(hallucination))
         )
         con.commit()
         con.close()
