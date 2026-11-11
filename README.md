@@ -4,7 +4,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/flask-3.x-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![Tests](https://img.shields.io/badge/tests-171%20passing-3fb950)](#tests)
+[![tests](https://github.com/kurosaki8250/ace-vend/actions/workflows/tests.yml/badge.svg)](https://github.com/kurosaki8250/ace-vend/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![Runs offline](https://img.shields.io/badge/demo-zero%20setup-4cc9f0)](#quickstart-30-seconds)
 
