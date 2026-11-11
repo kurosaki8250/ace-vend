@@ -1,171 +1,233 @@
-"""
-Tests for Project Aether Agent module
-"""
+"""Tests for the agent's ACE loop and customer-text parsing."""
+
+from __future__ import annotations
+
+import json
 
 import pytest
 
-
-class TestAgent:
-    """Test cases for the Agent class."""
-    
-    def test_agent_initialization(self):
-        """Test that agent initializes correctly."""
-        from agent.agent import get_agent
-        
-        agent = get_agent()
-        assert agent is not None
-        assert hasattr(agent, 'chat')
-        assert hasattr(agent, 'clear_conversation')
-    
-    def test_agent_chat_method_exists(self):
-        """Test that chat method exists and is callable."""
-        from agent.agent import Agent
-        
-        agent = Agent()
-        assert callable(agent.chat)
-    
-    def test_agent_response_not_empty(self):
-        """Test that agent returns a response (may be error if no API key)."""
-        from agent.agent import chat
-        
-        # This will work if API key is configured, otherwise return error message
-        response = chat("Hello")
-        assert isinstance(response, str)
-        assert len(response) > 0
+from ace_vend.agent import VendingAgent
+from ace_vend.config import Settings
+from ace_vend.environment import Request
 
 
-class TestMemory:
-    """Test cases for the Memory class."""
-    
-    def test_memory_creation(self):
-        """Test memory initialization."""
-        from agent.memory import Memory
-        
-        memory = Memory()
-        assert memory is not None
-    
-    def test_add_message(self):
-        """Test adding messages to memory."""
-        from agent.memory import Memory
-        
-        memory = Memory()
-        memory.create_conversation()
-        
-        message = memory.add_message("user", "Hello")
-        assert message is not None
-        assert message.content == "Hello"
-        assert message.role == "user"
-    
-    def test_get_history(self):
-        """Test retrieving conversation history."""
-        from agent.memory import Memory
-        
-        memory = Memory()
-        memory.create_conversation()
-        
-        memory.add_message("user", "Hello")
-        memory.add_message("assistant", "Hi there!")
-        
-        history = memory.get_history()
-        assert len(history) == 2
-        assert history[0]["role"] == "user"
-        assert history[1]["role"] == "assistant"
-    
-    def test_clear_conversation(self):
-        """Test clearing conversation."""
-        from agent.memory import Memory
-        
-        memory = Memory()
-        memory.create_conversation()
-        
-        memory.add_message("user", "Hello")
-        memory.clear()
-        
-        history = memory.get_history()
-        assert len(history) == 0
+def make_agent(mode: str = "ace", steps: int = 60) -> VendingAgent:
+    return VendingAgent(settings=Settings(seed=42, steps=steps), mode=mode, seed=42)
 
 
-class TestLLM:
-    """Test cases for the LLM client."""
-    
-    def test_llm_client_initialization(self):
-        """Test LLM client initializes."""
-        from agent.llm import LLMClient
-        
-        client = LLMClient()
-        assert client is not None
-    
-    def test_llm_chat_method_exists(self):
-        """Test that chat method exists."""
-        from agent.llm import LLMClient
-        
-        client = LLMClient()
-        assert hasattr(client, 'chat')
-        assert callable(client.chat)
-    
-    def test_llm_without_api_key_raises_error(self):
-        """Test that calling LLM without API key raises appropriate error."""
-        from agent.llm import LLMClient
-        from config.settings import Settings
-        
-        # Create settings without API key
-        import os
-        original_key = os.environ.get("OPENAI_API_KEY", "")
-        os.environ["OPENAI_API_KEY"] = ""
-        
-        try:
-            client = LLMClient()
-            # Should raise RuntimeError when no API key
-            with pytest.raises(RuntimeError):
-                client.chat([{"role": "user", "content": "Hello"}])
-        finally:
-            if original_key:
-                os.environ["OPENAI_API_KEY"] = original_key
+class TestConstruction:
+    def test_rejects_unknown_mode(self):
+        with pytest.raises(ValueError):
+            make_agent(mode="turbo")
+
+    def test_ace_starts_with_an_empty_playbook(self):
+        agent = make_agent("ace")
+        assert agent.playbook.bullets == []
+
+    def test_static_starts_with_the_handwritten_playbook(self):
+        agent = make_agent("static")
+        assert len(agent.playbook.bullets) == 6
+
+    def test_baseline_starts_with_an_empty_playbook(self):
+        agent = make_agent("baseline")
+        assert agent.playbook.bullets == []
+
+    def test_backend_is_offline_by_default(self):
+        assert make_agent().backend.name == "offline"
 
 
-class TestTools:
-    """Test cases for the Tools system."""
-    
-    def test_tool_registry_initialization(self):
-        """Test tool registry initializes with built-in tools."""
-        from agent.tools import ToolRegistry
-        
-        registry = ToolRegistry()
-        assert len(registry.tools) > 0
-    
-    def test_calculate_tool(self):
-        """Test the calculate tool."""
-        from agent.tools import execute_tool
-        
-        result = execute_tool("calculate", expression="2 + 2")
-        assert result is not None
-        assert result.success is True
-        assert result.result == "4"
-    
-    def test_time_tool(self):
-        """Test the get_current_time tool."""
-        from agent.tools import execute_tool
-        from datetime import datetime
-        
-        result = execute_tool("get_current_time")
-        assert result is not None
-        assert result.success is True
-        # Verify it's a valid datetime string
-        datetime.strptime(result.result, "%Y-%m-%d %H:%M:%S")
-    
-    def test_list_tools(self):
-        """Test listing available tools."""
-        from agent.tools import list_available_tools
-        
-        tools = list_available_tools()
-        assert isinstance(tools, list)
-        assert len(tools) > 0
-        
-        # Check structure
-        for tool in tools:
-            assert "name" in tool
-            assert "description" in tool
+class TestStepLoop:
+    def test_step_returns_a_complete_record(self):
+        agent = make_agent()
+        record = agent.step()
+
+        for key in (
+            "step",
+            "request",
+            "proposed",
+            "decision",
+            "guard",
+            "outcome",
+            "allowed",
+            "reward",
+            "profit",
+            "cash",
+            "learned",
+        ):
+            assert key in record
+        assert record["step"] == 1
+        assert agent.env.step == 1
+
+    def test_ace_learns_bullets(self):
+        agent = make_agent("ace")
+        for _ in range(25):
+            agent.step()
+        assert len(agent.playbook.bullets) > 0
+
+    def test_baseline_never_learns(self):
+        agent = make_agent("baseline")
+        for _ in range(25):
+            agent.step()
+        assert agent.playbook.bullets == []
+
+    def test_static_never_grows_its_playbook(self):
+        agent = make_agent("static")
+        for _ in range(25):
+            agent.step()
+        assert len(agent.playbook.bullets) == 6
+
+    def test_ace_playbook_is_serialisable_after_learning(self):
+        agent = make_agent("ace")
+        for _ in range(20):
+            agent.step()
+        payload = agent.playbook.to_dict()
+        json.dumps(payload)
+        assert payload["stats"]["bullets"] == len(agent.playbook.bullets)
+
+    def test_guard_blocks_are_recorded(self):
+        agent = make_agent("baseline")
+        for _ in range(40):
+            agent.step()
+        assert agent.guard.blocked > 0
+        assert any(not r["allowed"] for r in agent.records)
+
+    def test_blocked_actions_are_never_executed(self):
+        agent = make_agent("baseline")
+        for _ in range(40):
+            agent.step()
+        for record in agent.records:
+            if not record["allowed"]:
+                assert record["decision"] is None
+                assert record["outcome"]["event"] == "refused"
+
+    def test_customer_text_overrides_the_stream(self):
+        agent = make_agent()
+        record = agent.step("I would like a water please")
+        assert record["request"]["kind"] == "buy"
+        assert record["request"]["sku"] == "water"
+
+    def test_learned_bullets_are_logged_with_their_step(self):
+        agent = make_agent("ace")
+        for _ in range(20):
+            agent.step()
+        assert agent.learned
+        assert all("step" in item for item in agent.learned)
+
+    def test_reset_restores_the_initial_state(self):
+        agent = make_agent("ace")
+        for _ in range(15):
+            agent.step()
+        agent.reset(seed=7)
+
+        assert agent.env.step == 0
+        assert agent.seed == 7
+        assert agent.playbook.bullets == []
+        assert agent.records == []
+
+    def test_reset_restores_the_static_playbook(self):
+        agent = make_agent("static")
+        for _ in range(10):
+            agent.step()
+        agent.reset()
+        assert len(agent.playbook.bullets) == 6
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+class TestParsing:
+    @pytest.fixture()
+    def agent(self) -> VendingAgent:
+        return make_agent()
+
+    @pytest.mark.parametrize(
+        "text,sku",
+        [
+            ("I want a Coke", "coke"),
+            ("coca-cola please", "coke"),
+            ("some water", "water"),
+            ("chips!", "chips"),
+            ("a candy bar", "candy"),
+            ("cold brew", "coffee"),
+        ],
+    )
+    def test_buy_requests_find_the_sku(self, agent, text, sku):
+        request = agent.parse_customer_text(text)
+        assert request.kind == "buy"
+        assert request.sku == sku
+
+    def test_discount_requests_are_detected(self, agent):
+        request = agent.parse_customer_text("Can I get 30% off the coke?")
+        assert request.kind == "discount"
+        assert request.sku == "coke"
+        assert request.discount_pct == pytest.approx(0.3)
+
+    def test_discount_percentage_is_clamped(self, agent):
+        request = agent.parse_customer_text("90% off everything")
+        assert request.discount_pct <= 0.5
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "This machine ate my money",
+            "the machine is broken",
+            "I want a refund",
+            "the coil is jammed",
+        ],
+    )
+    def test_complaints_are_detected(self, agent, text):
+        assert agent.parse_customer_text(text).kind == "complaint"
+
+    def test_browsing_is_the_default(self, agent):
+        assert agent.parse_customer_text("hello there").kind == "browse"
+
+    def test_blank_input_becomes_browse(self, agent):
+        request = agent.parse_customer_text("")
+        assert request.kind == "browse"
+
+    def test_complaint_takes_precedence_over_sku(self, agent):
+        request = agent.parse_customer_text("the coke machine is broken")
+        assert request.kind == "complaint"
+
+
+class TestViews:
+    def test_metrics_has_every_documented_key(self):
+        metrics = make_agent().metrics()
+        for key in (
+            "mode",
+            "backend",
+            "step",
+            "profit",
+            "revenue",
+            "spend",
+            "cash",
+            "units_sold",
+            "requests",
+            "fulfilled",
+            "refused",
+            "stockouts",
+            "service_rate",
+            "guard",
+            "playbook",
+        ):
+            assert key in metrics
+
+    def test_state_is_json_serialisable(self):
+        agent = make_agent()
+        for _ in range(5):
+            agent.step()
+        json.dumps(agent.state())
+
+    def test_state_never_leaks_the_api_key(self):
+        settings = Settings(seed=42, openai_api_key="sk-supersecret")
+        agent = VendingAgent(settings=settings, mode="ace", seed=42)
+        assert "sk-supersecret" not in json.dumps(agent.state())
+
+    def test_records_are_capped_in_state(self):
+        agent = make_agent()
+        for _ in range(50):
+            agent.step()
+        assert len(agent.state()["records"]) <= 40
+
+    def test_episodes_are_kept_for_reflection(self):
+        agent = make_agent()
+        for _ in range(5):
+            agent.step()
+        assert len(agent.episodes) == 5

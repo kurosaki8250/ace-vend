@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ACE-Vend — self-improving vending agent</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◈</span>
+      <div>
+        <h1>ACE-Vend</h1>
+        <p>Agentic Context Engineering · vending machine</p>
+      </div>
+    </div>
+
+    <div class="topbar-controls">
+      <label class="field">
+        <span>Mode</span>
+        <select id="mode-select">
+          <option value="ace">ACE (self-improving)</option>
+          <option value="static">Static playbook</option>
+          <option value="baseline">Baseline (no context)</option>
+        </select>
+      </label>
+      <div class="badge" id="backend-badge">offline</div>
+      <div class="badge" id="step-badge">step 0</div>
+    </div>
+  </header>
+
+  <section class="stats">
+    <article class="stat">
+      <span class="stat-label">Profit</span>
+      <strong class="stat-value" id="stat-profit">$0.00</strong>
+      <span class="stat-sub" id="stat-revenue">revenue $0.00 · spend $0.00</span>
+    </article>
+    <article class="stat">
+      <span class="stat-label">Cash on hand</span>
+      <strong class="stat-value" id="stat-cash">$0.00</strong>
+      <span class="stat-sub" id="stat-units">0 units sold</span>
+    </article>
+    <article class="stat">
+      <span class="stat-label">Service rate</span>
+      <strong class="stat-value" id="stat-service">0%</strong>
+      <span class="stat-sub" id="stat-service-sub">0 / 0 requests</span>
+    </article>
+    <article class="stat">
+      <span class="stat-label">Hallucinations blocked</span>
+      <strong class="stat-value" id="stat-guard">0</strong>
+      <span class="stat-sub" id="stat-guard-sub">0 actions checked</span>
+    </article>
+  </section>
+
+  <main class="layout">
+    <!-- ---------------------------------------------------------- machine -->
+    <section class="panel machine">
+      <div class="panel-head">
+        <h2>The machine</h2>
+        <span class="pill" id="stock-pill">0 units</span>
+      </div>
+      <div id="slots" class="slots"></div>
+
+      <div class="chart-wrap">
+        <div class="panel-head compact">
+          <h3>Profit over time</h3>
+        </div>
+        <svg id="chart" viewBox="0 0 300 90" preserveAspectRatio="none" aria-label="profit chart">
+          <polyline id="chart-line" points="" fill="none" stroke="#4cc9f0" stroke-width="2" />
+          <line x1="0" y1="90" x2="300" y2="90" stroke="#1e2733" stroke-width="1" />
+        </svg>
+      </div>
+
+      <div class="controls">
+        <button id="btn-step" class="btn primary">Step</button>
+        <button id="btn-auto" class="btn">Auto-run</button>
+        <button id="btn-reset" class="btn ghost">Reset</button>
+      </div>
+
+      <div class="request-row">
+        <input id="customer-input" type="text" placeholder="Customer: I want a Coke" />
+        <button id="btn-send" class="btn">Send</button>
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------- decision -->
+    <section class="panel decision">
+      <div class="panel-head">
+        <h2>Live decision</h2>
+        <span class="pill" id="reward-pill">$0.00</span>
+      </div>
+
+      <div class="decision-block">
+        <span class="label">Customer</span>
+        <p id="dec-request" class="mono">waiting for the first step…</p>
+      </div>
+
+      <div class="decision-block">
+        <span class="label">Action</span>
+        <p id="dec-action" class="mono">—</p>
+        <p id="dec-reasoning" class="muted"></p>
+      </div>
+
+      <div class="decision-block">
+        <span class="label">Guard</span>
+        <p id="dec-guard" class="mono">—</p>
+        <ul id="dec-violations" class="violations"></ul>
+      </div>
+
+      <div class="panel-head compact">
+        <h3>Event log</h3>
+      </div>
+      <ol id="log" class="log"></ol>
+    </section>
+
+    <!-- --------------------------------------------------------- playbook -->
+    <section class="panel playbook">
+      <div class="panel-head">
+        <h2>Playbook</h2>
+        <span class="pill" id="pb-pill">0 bullets</span>
+      </div>
+      <p class="muted small" id="pb-meta">no lessons learned yet</p>
+      <div id="pb-list" class="pb-list"></div>
+
+      <div class="panel-head compact">
+        <h3>Guard breakdown</h3>
+      </div>
+      <ul id="guard-breakdown" class="breakdown"></ul>
+
+      <button id="btn-experiment" class="btn wide">Run 3-condition experiment</button>
+      <pre id="experiment-output" class="experiment hidden"></pre>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="footer-status">connecting…</span>
+    <span class="muted">ACE-Vend · Generator → Reflector → Curator</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
